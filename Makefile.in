@@ -105,6 +105,11 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	kex.o kex-names.o kexdh.o kexgex.o kexecdh.o kexc25519.o \
 	kexgexc.o kexgexs.o \
 	kexsntrup761x25519.o kexmlkem768x25519.o kexmlkemcustom.o sntrup761.o kexgen.o \
+	kyber768/cbd.o kyber768/consts.o kyber768/indcpa.o kyber768/kem.o \
+	kyber768/poly.o kyber768/polyvec.o kyber768/rejsample.o kyber768/rng.o \
+	kyber768/fips202.o kyber768/symmetric-shake.o \
+	kyber768/verify.o kyber768/aes256ctr.o \
+	kyber768/fq.o kyber768/invntt.o kyber768/ntt.o kyber768/shuffle.o kyber768/basemul.o
 	sftp-realpath.o platform-pledge.o platform-tracing.o platform-misc.o \
 	sshbuf-io.o misc-agent.o
 
