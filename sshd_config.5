@@ -1051,6 +1051,8 @@ ecdh-sha2-nistp521
 .It
 mlkem768x25519-sha256
 .It
+mlkemcustom-sha256
+.It
 sntrup761x25519-sha512
 .It
 sntrup761x25519-sha512@openssh.com
@@ -1059,6 +1061,7 @@ sntrup761x25519-sha512@openssh.com
 The default is:
 .Bd -literal -offset indent
 mlkem768x25519-sha256,
+mlkemcustom-sha256
 sntrup761x25519-sha512,sntrup761x25519-sha512@openssh.com,
 curve25519-sha256,curve25519-sha256@libssh.org,
 ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521

@@ -36,8 +36,10 @@ do_send_and_receive(struct ssh *from, struct ssh *to)
 	const u_char *buf;
 	int r;
 
-	for (;;) {
-		if ((r = ssh_packet_next(from, &type)) != 0) {
+	for (;;)
+	{
+		if ((r = ssh_packet_next(from, &type)) != 0)
+		{
 			fprintf(stderr, "ssh_packet_next: %s\n", ssh_err(r));
 			return r;
 		}
@@ -49,7 +51,7 @@ do_send_and_receive(struct ssh *from, struct ssh *to)
 		if (len == 0)
 			return 0;
 		if ((r = ssh_output_consume(from, len)) != 0 ||
-		    (r = ssh_input_append(to, buf, len)) != 0)
+			(r = ssh_input_append(to, buf, len)) != 0)
 			return r;
 	}
 }
@@ -59,7 +61,8 @@ run_kex(struct ssh *client, struct ssh *server)
 {
 	int r = 0;
 
-	while (!server->kex->done || !client->kex->done) {
+	while (!server->kex->done || !client->kex->done)
+	{
 		if (do_debug)
 			printf(" S:");
 		if ((r = do_send_and_receive(server, client)))
@@ -78,19 +81,22 @@ run_kex(struct ssh *client, struct ssh *server)
 
 static void
 do_kex_with_key(char *kex, char *cipher, char *mac,
-    struct sshkey *key, int keytype, int bits)
+				struct sshkey *key, int keytype, int bits)
 {
 	struct ssh *client = NULL, *server = NULL, *server2 = NULL;
 	struct sshkey *private, *public;
 	struct sshbuf *state;
 	struct kex_params kex_params;
-	char *myproposal[PROPOSAL_MAX] = { KEX_CLIENT };
+	char *myproposal[PROPOSAL_MAX] = {KEX_CLIENT};
 	char *keyname = NULL;
 
-	if (key != NULL) {
+	if (key != NULL)
+	{
 		private = key;
 		keytype = key->type;
-	} else {
+	}
+	else
+	{
 		TEST_START("sshkey_generate");
 		ASSERT_INT_EQ(sshkey_generate(keytype, bits, &private), 0);
 		TEST_DONE();
@@ -104,11 +110,13 @@ do_kex_with_key(char *kex, char *cipher, char *mac,
 	memcpy(kex_params.proposal, myproposal, sizeof(myproposal));
 	if (kex != NULL)
 		kex_params.proposal[PROPOSAL_KEX_ALGS] = kex;
-	if (cipher != NULL) {
+	if (cipher != NULL)
+	{
 		kex_params.proposal[PROPOSAL_ENC_ALGS_CTOS] = cipher;
 		kex_params.proposal[PROPOSAL_ENC_ALGS_STOC] = cipher;
 	}
-	if (mac != NULL) {
+	if (mac != NULL)
+	{
 		kex_params.proposal[PROPOSAL_MAC_ALGS_CTOS] = mac;
 		kex_params.proposal[PROPOSAL_MAC_ALGS_STOC] = mac;
 	}
@@ -169,6 +177,7 @@ do_kex_with_key(char *kex, char *cipher, char *mac,
 	server2->kex->kex[KEX_C25519_SHA256] = kex_gen_server;
 	server2->kex->kex[KEX_KEM_SNTRUP761X25519_SHA512] = kex_gen_server;
 	server2->kex->kex[KEX_KEM_MLKEM768X25519_SHA256] = kex_gen_server;
+	server2->kex->kex[KEX_KEM_MLKEMCUSTOM_SHA256] = kex_gen_server;
 	server2->kex->load_host_public_key = server->kex->load_host_public_key;
 	server2->kex->load_host_private_key = server->kex->load_host_private_key;
 	server2->kex->sign = server->kex->sign;
@@ -198,7 +207,8 @@ do_kex(char *kex)
 	struct sshkey *key = NULL;
 	char name[256];
 
-	if (test_is_benchmark()) {
+	if (test_is_benchmark())
+	{
 		snprintf(name, sizeof(name), "generate %s", kex);
 		TEST_START(name);
 		ASSERT_INT_EQ(sshkey_generate(KEY_ED25519, 0, &key), 0);
@@ -210,7 +220,7 @@ do_kex(char *kex)
 		 * the KEX to avoid DH-GEX taking forever.
 		 */
 		do_kex_with_key(kex, "aes128-ctr", "hmac-sha2-256", key,
-		    KEY_ED25519, 256);
+						KEY_ED25519, 256);
 		BENCH_FINISH("kex");
 		sshkey_free(key);
 		return;
@@ -218,15 +228,14 @@ do_kex(char *kex)
 
 #ifdef WITH_OPENSSL
 	do_kex_with_key(kex, NULL, NULL, NULL, KEY_RSA, 2048);
-# ifdef OPENSSL_HAS_ECC
+#ifdef OPENSSL_HAS_ECC
 	do_kex_with_key(kex, NULL, NULL, NULL, KEY_ECDSA, 256);
-# endif /* OPENSSL_HAS_ECC */
+#endif /* OPENSSL_HAS_ECC */
 #endif /* WITH_OPENSSL */
 	do_kex_with_key(kex, NULL, NULL, NULL, KEY_ED25519, 256);
 }
 
-void
-kex_tests(void)
+void kex_tests(void)
 {
 	do_kex("curve25519-sha256@libssh.org");
 #ifdef WITH_OPENSSL
@@ -239,11 +248,11 @@ kex_tests(void)
 	do_kex("diffie-hellman-group-exchange-sha1");
 	do_kex("diffie-hellman-group14-sha1");
 	do_kex("diffie-hellman-group1-sha1");
-# ifdef USE_MLKEM768X25519
+#ifdef USE_MLKEM768X25519
 	do_kex("mlkem768x25519-sha256");
-# endif /* USE_MLKEM768X25519 */
-# ifdef USE_SNTRUP761X25519
+#endif /* USE_MLKEM768X25519 */
+#ifdef USE_SNTRUP761X25519
 	do_kex("sntrup761x25519-sha512@openssh.com");
-# endif /* USE_SNTRUP761X25519 */
+#endif /* USE_SNTRUP761X25519 */
 #endif /* WITH_OPENSSL */
 }
