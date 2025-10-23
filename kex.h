@@ -264,6 +264,8 @@ int kex_kem_sntrup761x25519_dec(struct kex *, const struct sshbuf *,
 int kex_kem_mlkem768x25519_keypair(struct kex *);
 int kex_kem_mlkem768x25519_enc(struct kex *, const struct sshbuf *,
 							   struct sshbuf **, struct sshbuf **);
+int kex_kem_mlkem768x25519_dec(struct kex *kex,
+							   const struct sshbuf *server_blob, struct sshbuf **shared_secretp);
 
 int kex_kem_mlkemcustom_dec(struct kex *kex,
 							const struct sshbuf *server_blob, struct sshbuf **shared_secretp);

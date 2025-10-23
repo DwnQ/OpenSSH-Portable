@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "sshkey.h": "c",
+    "api.h": "c",
+    "indcpa.h": "c",
+    "includes.h": "c",
+    "sshbuf.h": "c",
+    "kex.h": "c",
+    "digest.h": "c",
+    "ssh2.h": "c"
+  }
+}

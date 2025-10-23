@@ -33,6 +33,7 @@ STRIP_OPT=@STRIP_OPT@
 TEST_SHELL=@TEST_SHELL@
 BUILDDIR=@abs_top_builddir@
 SK_STANDALONE=@SK_STANDALONE@
+COMPATINCLUDES="$(BUILDDIR)/@COMPATINCLUDES@"
 
 PATHS= -DSSHDIR=\"$(sysconfdir)\" \
 	-D_PATH_SSH_PROGRAM=\"$(SSH_PROGRAM)\" \
@@ -50,7 +51,13 @@ CC=@CC@
 LD=@LD@
 CFLAGS=@CFLAGS@
 CFLAGS_NOPIE=@CFLAGS_NOPIE@
-CPPFLAGS=-I. -I$(srcdir) @CPPFLAGS@ $(PATHS) @DEFS@
+CFLAGS += -mavx2
+CPPFLAGS=-I. -I$(srcdir) -I$(COMPATINCLUDES) \
+          -Ipqclean_falcon-512_avx2 \
+          -Ipqclean_falcon-512_clean \
+          -Ipqcrystals-kyber_kyber768_avx2 \
+          -Ipqcrystals-kyber_kyber768_ref \
+          @CPPFLAGS@ $(PATHS) @DEFS@
 PICFLAG=@PICFLAG@
 LIBS=@LIBS@
 CHANNELLIBS=@CHANNELLIBS@
@@ -104,13 +111,24 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	hmac.o ed25519.o hash.o \
 	kex.o kex-names.o kexdh.o kexgex.o kexecdh.o kexc25519.o \
 	kexgexc.o kexgexs.o \
-	kexsntrup761x25519.o kexmlkem768x25519.o kexmlkemcustom.o sntrup761.o kexgen.o \
-	kyber768/cbd.o kyber768/consts.o kyber768/indcpa.o kyber768/kem.o \
-	kyber768/poly.o kyber768/polyvec.o kyber768/rejsample.o kyber768/rng.o \
-	kyber768/fips202.o kyber768/symmetric-shake.o \
-	kyber768/verify.o kyber768/aes256ctr.o \
-	kyber768/fq.o kyber768/invntt.o kyber768/ntt.o kyber768/shuffle.o kyber768/basemul.o
+	kexsntrup761x25519.o kexmlkem768x25519.o sntrup761.o kexgen.o \
 	sftp-realpath.o platform-pledge.o platform-tracing.o platform-misc.o \
+	kyber768/aes256ctr.o kyber768/basemul.o kyber768/cbd.o kyber768/consts.o \
+	kyber768/fips202.o kyber768/fips202x4.o kyber768/fq.o kyber768/indcpa.o \
+	kyber768/invntt.o kyber768/kem.o kyber768/ntt.o kyber768/poly.o kyber768/polyvec.o \
+	kyber768/rejsample.o kyber768/rng.o kyber768/shuffle.o kyber768/speed_print.o \
+	kyber768/symmetric-shake.o kyber768/verify.o \
+	pqclean_falcon-512_clean/codec.o pqclean_falcon-512_clean/common.o \
+	pqclean_falcon-512_clean/fft.o pqclean_falcon-512_clean/fpr.o \
+	pqclean_falcon-512_clean/keygen.o pqclean_falcon-512_clean/pqclean.o \
+	pqclean_falcon-512_clean/rng.o pqclean_falcon-512_clean/sign.o pqclean_falcon-512_clean/vrfy.o \
+	pqcrystals-kyber_kyber768_ref/cbd.o pqcrystals-kyber_kyber768_ref/indcpa.o \
+	pqcrystals-kyber_kyber768_ref/kem.o pqcrystals-kyber_kyber768_ref/ntt.o \
+	pqcrystals-kyber_kyber768_ref/poly.o pqcrystals-kyber_kyber768_ref/polyvec.o \
+	pqcrystals-kyber_kyber768_ref/reduce.o pqcrystals-kyber_kyber768_ref/symmetric-shake.o \
+	pqcrystals-kyber_kyber768_ref/verify.o \
+	pqcrystals-kyber_kyber768_avx2/ntt.o pqcrystals-kyber_kyber768_avx2/poly.o \
+	pqcrystals-kyber_kyber768_avx2/polyvec.o \
 	sshbuf-io.o misc-agent.o
 
 P11OBJS= ssh-pkcs11-client.o
@@ -118,7 +136,7 @@ P11OBJS= ssh-pkcs11-client.o
 SKOBJS=	ssh-sk-client.o
 
 SSHOBJS= ssh.o readconf.o clientloop.o sshtty.o \
-	sshconnect.o sshconnect2.o mux.o $(P11OBJS) $(SKOBJS)
+	sshconnect.o sshconnect2.o mux.o ssh-pkcs11.o $(SKOBJS)
 
 SSHDOBJS=sshd.o \
 	platform-listen.o \
@@ -162,7 +180,7 @@ SSHADD_OBJS=	ssh-add.o $(P11OBJS) $(SKOBJS)
 
 SSHAGENT_OBJS=	ssh-agent.o $(P11OBJS) $(SKOBJS)
 
-SSHKEYGEN_OBJS=	ssh-keygen.o sshsig.o $(P11OBJS) $(SKOBJS)
+SSHKEYGEN_OBJS=	ssh-keygen.o sshsig.o ssh-pkcs11.o $(SKOBJS)
 
 SSHKEYSIGN_OBJS=ssh-keysign.o readconf.o uidswap.o $(P11OBJS) $(SKOBJS)
 
@@ -211,7 +229,7 @@ $(LIBSSH_OBJS): Makefile.in config.h
 $(SSHOBJS): Makefile.in config.h
 $(SSHDOBJS): Makefile.in config.h
 
-.c.o:
+%/%.o: %/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 LIBCOMPAT=openbsd-compat/libopenbsd-compat.a
@@ -299,6 +317,16 @@ $(CONFIGFILES): $(CONFIGFILES_IN) Makefile
 # fake rule to stop make trying to compile moduli.o into a binary "moduli.o"
 moduli:
 	echo
+
+
+# --- Added: build PQC submodules (Kyber, Falcon, etc.) ---
+
+%/%.o: %/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+%/%.o: %/%.S
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
 
 clean:	regressclean
 	rm -f *.o *.lo *.a $(TARGETS) logintest config.cache config.log
@@ -700,7 +728,9 @@ UNITTESTS_TEST_MISC_OBJS=\
 	regress/unittests/misc/test_argv.o \
 	regress/unittests/misc/test_strdelim.o \
 	regress/unittests/misc/test_hpdelim.o \
-	regress/unittests/misc/test_ptimeout.o
+	regress/unittests/misc/test_ptimeout.o \
+	regress/unittests/misc/test_xextendf.o \
+	regress/unittests/misc/test_misc.o
 
 regress/unittests/misc/test_misc$(EXEEXT): \
     ${UNITTESTS_TEST_MISC_OBJS} \
@@ -820,6 +850,7 @@ interop-tests t-exec file-tests extra-tests: regress-prep regress-binaries $(TAR
 		TEST_SSH_DROPBEARKEY="@DROPBEARKEY@" \
 		TEST_SSH_DROPBEARCONVERT="@DROPBEARCONVERT@" \
 		TEST_SSH_DBCLIENT="@DBCLIENT@" \
+		TEST_SSH_TMUX="@TMUX@" \
 		TEST_SSH_IPV6="@TEST_SSH_IPV6@" \
 		TEST_SSH_UTF8="@TEST_SSH_UTF8@" \
 		TEST_SHELL="$(TEST_SHELL)" \
