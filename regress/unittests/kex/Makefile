@@ -26,7 +26,6 @@ SRCS+=	smult_curve25519_ref.c
 SRCS+=	kexgen.c
 SRCS+=	kexsntrup761x25519.c
 SRCS+=	kexmlkem768x25519.c
-SRCS+=	kexmlkemcustom.c
 SRCS+=	sntrup761.c
 SRCS+=	utf8.c
 

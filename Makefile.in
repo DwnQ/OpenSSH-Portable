@@ -1,5 +1,6 @@
 SHELL=@SH@
 
+
 AUTORECONF=autoreconf
 
 prefix=@prefix@
@@ -51,15 +52,28 @@ CC=@CC@
 LD=@LD@
 CFLAGS=@CFLAGS@
 CFLAGS_NOPIE=@CFLAGS_NOPIE@
-CFLAGS += -mavx2
-CPPFLAGS=-I. -I$(srcdir) -I$(COMPATINCLUDES) \
-          -Ipqclean_falcon-512_avx2 \
-          -Ipqclean_falcon-512_clean \
-          -Ipqcrystals-kyber_kyber768_avx2 \
-          -Ipqcrystals-kyber_kyber768_ref \
-          @CPPFLAGS@ $(PATHS) @DEFS@
+CFLAGS += -mavx2 -mbmi2 -maes
+CFLAGS += -Wno-deprecated-declarations
+CPPFLAGS = -I. -I$(srcdir) \
+    -I$(srcdir)/pqcrystals-kyber_kyber768_avx2 \
+    -I$(srcdir)/pqcrystals-kyber_kyber768_ref \
+    -I$(srcdir)/liboqs/lib\
+	-I./liboqs/include \
+	-I./liboqs/src \
+    -I./liboqs/src/common/sha3 \
+    -I./liboqs/src/common/rand \
+    -I./liboqs/src/common \
+    -I./liboqs/src/common/rand \
+	-I./liboqs/src/common/pqclean_shims \
+	-I./liboqs/lib/cecies/include \
+    @CPPFLAGS@ $(PATHS) @DEFS@
+
 PICFLAG=@PICFLAG@
 LIBS=@LIBS@
+LIBS += -lcecies -loqs -lcrypto -lz
+LIBS += -L$(srcdir)/liboqs/build/lib -loqs \
+      	-L$(srcdir)/liboqs/lib/cecies/build -lcecies \
+    	-lcrypto -lz
 CHANNELLIBS=@CHANNELLIBS@
 K5LIBS=@K5LIBS@
 GSSLIBS=@GSSLIBS@
@@ -74,6 +88,8 @@ INSTALL=@INSTALL@
 SED=@SED@
 XAUTH_PATH=@XAUTH_PATH@
 LDFLAGS=-L. -Lopenbsd-compat/ @LDFLAGS@
+LDFLAGS += -L$(srcdir)/liboqs/lib
+LDFLAGS += -L$(srcdir)/liboqs/lib/cecies/build
 LDFLAGS_NOPIE=-L. -Lopenbsd-compat/ @LDFLAGS_NOPIE@
 EXEEXT=@EXEEXT@
 MANFMT=@MANFMT@
@@ -113,22 +129,17 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	kexgexc.o kexgexs.o \
 	kexsntrup761x25519.o kexmlkem768x25519.o sntrup761.o kexgen.o \
 	sftp-realpath.o platform-pledge.o platform-tracing.o platform-misc.o \
-	kyber768/aes256ctr.o kyber768/basemul.o kyber768/cbd.o kyber768/consts.o \
-	kyber768/fips202.o kyber768/fips202x4.o kyber768/fq.o kyber768/indcpa.o \
-	kyber768/invntt.o kyber768/kem.o kyber768/ntt.o kyber768/poly.o kyber768/polyvec.o \
-	kyber768/rejsample.o kyber768/rng.o kyber768/shuffle.o kyber768/speed_print.o \
-	kyber768/symmetric-shake.o kyber768/verify.o \
-	pqclean_falcon-512_clean/codec.o pqclean_falcon-512_clean/common.o \
-	pqclean_falcon-512_clean/fft.o pqclean_falcon-512_clean/fpr.o \
-	pqclean_falcon-512_clean/keygen.o pqclean_falcon-512_clean/pqclean.o \
-	pqclean_falcon-512_clean/rng.o pqclean_falcon-512_clean/sign.o pqclean_falcon-512_clean/vrfy.o \
-	pqcrystals-kyber_kyber768_ref/cbd.o pqcrystals-kyber_kyber768_ref/indcpa.o \
-	pqcrystals-kyber_kyber768_ref/kem.o pqcrystals-kyber_kyber768_ref/ntt.o \
-	pqcrystals-kyber_kyber768_ref/poly.o pqcrystals-kyber_kyber768_ref/polyvec.o \
-	pqcrystals-kyber_kyber768_ref/reduce.o pqcrystals-kyber_kyber768_ref/symmetric-shake.o \
-	pqcrystals-kyber_kyber768_ref/verify.o \
-	pqcrystals-kyber_kyber768_avx2/ntt.o pqcrystals-kyber_kyber768_avx2/poly.o \
-	pqcrystals-kyber_kyber768_avx2/polyvec.o \
+	kexmlkemcustom.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/cbd.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/indcpa.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/kem.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/poly.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/polyvec.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/reduce.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/verify.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/symmetric-shake.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/ntt.o \
+	liboqs/src/kem/kyber/pqcrystals-kyber_common_ref/fips202.o \
 	sshbuf-io.o misc-agent.o
 
 P11OBJS= ssh-pkcs11-client.o
