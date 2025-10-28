@@ -55,25 +55,18 @@ CFLAGS_NOPIE=@CFLAGS_NOPIE@
 CFLAGS += -mavx2 -mbmi2 -maes
 CFLAGS += -Wno-deprecated-declarations
 CPPFLAGS = -I. -I$(srcdir) \
-    -I$(srcdir)/pqcrystals-kyber_kyber768_avx2 \
-    -I$(srcdir)/pqcrystals-kyber_kyber768_ref \
-    -I$(srcdir)/liboqs/lib\
-	-I./liboqs/include \
-	-I./liboqs/src \
+    -I./liboqs/liboqs/build/include/oqs \
+	-I./liboqs/include/oqs \
+	-I./liboqs/build/include \
     -I./liboqs/src/common/sha3 \
     -I./liboqs/src/common/rand \
-    -I./liboqs/src/common \
     -I./liboqs/src/common/rand \
 	-I./liboqs/src/common/pqclean_shims \
-	-I./liboqs/lib/cecies/include \
+	-I./liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref \
     @CPPFLAGS@ $(PATHS) @DEFS@
-
 PICFLAG=@PICFLAG@
 LIBS=@LIBS@
 LIBS += -lcecies -loqs -lcrypto -lz
-LIBS += -L$(srcdir)/liboqs/build/lib -loqs \
-      	-L$(srcdir)/liboqs/lib/cecies/build -lcecies \
-    	-lcrypto -lz
 CHANNELLIBS=@CHANNELLIBS@
 K5LIBS=@K5LIBS@
 GSSLIBS=@GSSLIBS@
@@ -88,7 +81,7 @@ INSTALL=@INSTALL@
 SED=@SED@
 XAUTH_PATH=@XAUTH_PATH@
 LDFLAGS=-L. -Lopenbsd-compat/ @LDFLAGS@
-LDFLAGS += -L$(srcdir)/liboqs/lib
+LDFLAGS += -L/usr/local/lib
 LDFLAGS += -L$(srcdir)/liboqs/lib/cecies/build
 LDFLAGS_NOPIE=-L. -Lopenbsd-compat/ @LDFLAGS_NOPIE@
 EXEEXT=@EXEEXT@

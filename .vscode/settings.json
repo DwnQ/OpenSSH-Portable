@@ -8,5 +8,6 @@
     "kex.h": "c",
     "digest.h": "c",
     "ssh2.h": "c"
-  }
+  },
+  "cmake.sourceDirectory": "/home/dwq/OpenSSH-Portable/liboqs"
 }

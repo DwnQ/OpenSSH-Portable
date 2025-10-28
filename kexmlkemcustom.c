@@ -23,8 +23,11 @@
 #include <stdint.h>
 
 #include <oqs/oqs.h>
-#include "liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/api.h"
-#include "liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/indcpa.h"
+#include <oqs/sha3.h>
+#include <api.h>
+#include <indcpa.h>
+#include <openssl/sha.h>
+
 
 #define AES_IV_LEN 12
 #define AES_TAG_LEN 12
@@ -33,31 +36,29 @@
 
 int kex_kem_mlkemcustom_keypair(struct kex *kex)
 {
-	struct sshbuf *buf = NULL;
-	u_char *cp = NULL;
-	size_t need;
-	int r;
+    struct sshbuf *buf = NULL;
+    u_char *cp = NULL;
+    size_t need;
+    int r = 0;                 
 
-	if ((buf = sshbuf_new()) == NULL)
-		return SSH_ERR_ALLOC_FAIL;
+    if ((buf = sshbuf_new()) == NULL)
+        return SSH_ERR_ALLOC_FAIL;
 
-	/* include Kyber public key + AES space */
-	need = pqcrystals_kyber768_CIPHERTEXTBYTES + AES_LEN;
-	if ((r = sshbuf_reserve(buf, need, &cp)) != 0)
-		goto out;
+    /* include ONLY the Kyber public key */
+    need = pqcrystals_kyber768_PUBLICKEYBYTES;       
+    if ((r = sshbuf_reserve(buf, need, &cp)) != 0)
+        goto out;
 
-	/* Kyber keypair generation */
-	pqcrystals_kyber768_ref_keypair(cp, kex->mlkem768_client_key); // pk=cp, sk=kex->mlkem768_client_key
+    /* Kyber keypair generation: pk=cp, sk=kex->mlkem768_client_key */
+    pqcrystals_kyber768_ref_keypair(cp, kex->mlkem768_client_key);
 
-	/* AES placeholder */
-	cp += pqcrystals_kyber768_CIPHERTEXTBYTES;
-	memset(cp, 0, AES_LEN);
+    /* no AES placeholder here */
 
-	kex->client_pub = buf;
-	buf = NULL;
+    kex->client_pub = buf;
+    buf = NULL;
 out:
-	sshbuf_free(buf);
-	return r;
+    sshbuf_free(buf);
+    return r;
 }
 
 int kex_kem_mlkemcustom_enc(struct kex *kex,
@@ -82,7 +83,7 @@ int kex_kem_mlkemcustom_enc(struct kex *kex,
 	*server_blobp = NULL;
 	*shared_secretp = NULL;
 
-	need = pqcrystals_kyber768_CIPHERTEXTBYTES + AES_LEN;
+	need = pqcrystals_kyber768_PUBLICKEYBYTES;
 	if (sshbuf_len(client_blob) != need)
 	{
 		r = SSH_ERR_SIGNATURE_INVALID;
@@ -110,9 +111,11 @@ int kex_kem_mlkemcustom_enc(struct kex *kex,
 	/* Kyber encapsulation */
 	pqcrystals_kyber768_ref_enc(outp, kem_key, client_pub);
 
-    /* 🔹 Derive AES key from Kyber shared secret using SHAKE-256 */
-    OQS_SHA3_shake256(aes_key, sizeof(aes_key),
-                      kem_key, pqcrystals_kyber768_BYTES);
+    /*  Derive AES key from Kyber shared secret using SHAKE-256 */
+if (SHA256(kem_key, pqcrystals_kyber768_BYTES, aes_key) == NULL) {
+    r = SSH_ERR_LIBCRYPTO_ERROR;
+    goto out;
+}
 
     /* AES-GCM encryption using derived key */
     aes_gcm_256b_encrypt(payload, sizeof(payload),
@@ -213,8 +216,11 @@ int kex_kem_mlkemcustom_dec(struct kex *kex,
 		goto out;
 	}
 
-    OQS_SHA3_shake256(aes_key, sizeof(aes_key),
-                      kem_key, pqcrystals_kyber768_BYTES);
+	/* Derive 32B AES key from Kyber shared secret using SHA-256 */
+	if (SHA256(kem_key, pqcrystals_kyber768_BYTES, aes_key) == NULL) {
+		r = SSH_ERR_LIBCRYPTO_ERROR;
+		goto out;
+	}
 
     ok = aes_gcm_256b_decrypt(ctext, ciphertext_len,
                               (char *)aes_key, NULL, 0,
