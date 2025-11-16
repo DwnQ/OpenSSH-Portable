@@ -28,37 +28,63 @@
 #include <indcpa.h>
 #include <openssl/sha.h>
 
+#include <time.h>
+#include <sys/time.h>
 
 #define AES_IV_LEN 12
 #define AES_TAG_LEN 12
 #define AES_CIPHERTEXT_LEN 8
 #define AES_LEN (AES_IV_LEN + AES_TAG_LEN + AES_CIPHERTEXT_LEN)
 
+#include <sys/time.h>
+#include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+
+static void
+log_benchmark(const struct kex *kex, const char *stage)
+{
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+
+	struct tm *tm_info = localtime(&tv.tv_sec);
+	char ts[64];
+	strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
+
+	const char *role = (kex && kex->server) ? "SERVER" : "CLIENT";
+
+	debug3("[%s.%03ld] %s: %s",
+	    ts, (long)(tv.tv_usec / 1000),
+	    role, stage ? stage : "");
+}
+
+
 int kex_kem_mlkemcustom_keypair(struct kex *kex)
 {
-    struct sshbuf *buf = NULL;
-    u_char *cp = NULL;
-    size_t need;
-    int r = 0;                 
+	struct sshbuf *buf = NULL;
+	u_char *cp = NULL;
+	size_t need;
+	int r = 0;
 
-    if ((buf = sshbuf_new()) == NULL)
-        return SSH_ERR_ALLOC_FAIL;
+	log_benchmark(kex, "keypair start");
 
-    /* include ONLY the Kyber public key */
-    need = pqcrystals_kyber768_PUBLICKEYBYTES;       
-    if ((r = sshbuf_reserve(buf, need, &cp)) != 0)
-        goto out;
+	if ((buf = sshbuf_new()) == NULL)
+		return SSH_ERR_ALLOC_FAIL;
 
-    /* Kyber keypair generation: pk=cp, sk=kex->mlkem768_client_key */
-    pqcrystals_kyber768_ref_keypair(cp, kex->mlkem768_client_key);
+	need = pqcrystals_kyber768_PUBLICKEYBYTES;
+	if ((r = sshbuf_reserve(buf, need, &cp)) != 0)
+		goto out;
 
-    /* no AES placeholder here */
+	pqcrystals_kyber768_ref_keypair(cp, kex->mlkem768_client_key);
 
-    kex->client_pub = buf;
-    buf = NULL;
+	kex->client_pub = buf;
+	buf = NULL;
+
 out:
-    sshbuf_free(buf);
-    return r;
+	log_benchmark(kex, "keypair end");
+	sshbuf_free(buf);
+	return r;
 }
 
 int kex_kem_mlkemcustom_enc(struct kex *kex,
@@ -83,6 +109,8 @@ int kex_kem_mlkemcustom_enc(struct kex *kex,
 	*server_blobp = NULL;
 	*shared_secretp = NULL;
 
+	log_benchmark(kex, "encapsulation start");
+	fflush(NULL);
 	need = pqcrystals_kyber768_PUBLICKEYBYTES;
 	if (sshbuf_len(client_blob) != need)
 	{
@@ -148,6 +176,7 @@ if (SHA256(kem_key, pqcrystals_kyber768_BYTES, aes_key) == NULL) {
 	buf = NULL;
 
 out:
+    log_benchmark(kex, "encapsulation end");
 	if (ivp)
 		OPENSSL_free(ivp);
 	if (tagp)
@@ -182,6 +211,8 @@ int kex_kem_mlkemcustom_dec(struct kex *kex,
 	uint8_t pt_len = 0;
 
 	u_char aes_key[32];
+
+	log_benchmark(kex, "decapsulation start");
 
 	*shared_secretp = NULL;
 
@@ -254,6 +285,7 @@ int kex_kem_mlkemcustom_dec(struct kex *kex,
 	buf = NULL;
 
 out:
+    log_benchmark(kex, "decapsulation end");
     explicit_bzero(aes_key, sizeof(aes_key));
 	explicit_bzero(hash, sizeof(hash));
 	if (pt)
