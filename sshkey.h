@@ -26,11 +26,15 @@
 #ifndef SSHKEY_H
 #define SSHKEY_H
 
+#include <pqclean_falcon-512_clean/api.h>
+#include <pqclean_falcon-512_clean/api.h>
+
 #include <sys/types.h>
 
 #ifdef WITH_OPENSSL
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
+
 # ifdef OPENSSL_HAS_ECC
 #  include <openssl/ec.h>
 #  include <openssl/ecdsa.h>
@@ -67,6 +71,7 @@ enum sshkey_types {
 	KEY_ECDSA_SK_CERT,
 	KEY_ED25519_SK,
 	KEY_ED25519_SK_CERT,
+	KEY_FALCON512,
 	KEY_UNSPEC
 };
 
@@ -136,6 +141,11 @@ struct sshkey {
 	size_t	shielded_len;
 	u_char	*shield_prekey;
 	size_t	shield_prekey_len;
+	/* Falcon SK and PK */
+	u_char *falcon512_pk;
+	u_char *falcon512_sk;
+	size_t falcon512_pk_len;                    
+    size_t falcon512_sk_len; 
 };
 
 #define	ED25519_SK_SZ	crypto_sign_ed25519_SECRETKEYBYTES

@@ -87,6 +87,8 @@ static int sshkey_from_blob_internal(struct sshbuf *buf,
     struct sshkey **keyp, int allow_cert);
 
 /* Supported key types */
+extern const struct sshkey_impl sshkey_falcon512_impl;
+
 extern const struct sshkey_impl sshkey_ed25519_impl;
 extern const struct sshkey_impl sshkey_ed25519_cert_impl;
 extern const struct sshkey_impl sshkey_ed25519_sk_impl;
@@ -116,6 +118,7 @@ extern const struct sshkey_impl sshkey_rsa_sha512_cert_impl;
 #endif /* WITH_OPENSSL */
 
 const struct sshkey_impl * const keyimpls[] = {
+	&sshkey_falcon512_impl,
 	&sshkey_ed25519_impl,
 	&sshkey_ed25519_cert_impl,
 #ifdef ENABLE_SK
@@ -3371,6 +3374,7 @@ sshkey_private_to_fileblob(struct sshkey *key, struct sshbuf *blob,
 #endif /* WITH_OPENSSL */
 	case KEY_ED25519:
 	case KEY_ED25519_SK:
+	case KEY_FALCON512:
 #ifdef WITH_OPENSSL
 	case KEY_ECDSA_SK:
 #endif /* WITH_OPENSSL */

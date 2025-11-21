@@ -54,7 +54,7 @@ log_benchmark(const struct kex *kex, const char *stage)
 
 	const char *role = (kex && kex->server) ? "SERVER" : "CLIENT";
 
-	debug3("[%s.%03ld] %s: %s",
+	debug3("kyber: [%s.%03ld] %s: %s",
 	    ts, (long)(tv.tv_usec / 1000),
 	    role, stage ? stage : "");
 }
@@ -140,10 +140,10 @@ int kex_kem_mlkemcustom_enc(struct kex *kex,
 	pqcrystals_kyber768_ref_enc(outp, kem_key, client_pub);
 
     /*  Derive AES key from Kyber shared secret using SHAKE-256 */
-if (SHA256(kem_key, pqcrystals_kyber768_BYTES, aes_key) == NULL) {
-    r = SSH_ERR_LIBCRYPTO_ERROR;
-    goto out;
-}
+	if (SHA256(kem_key, pqcrystals_kyber768_BYTES, aes_key) == NULL) {
+		r = SSH_ERR_LIBCRYPTO_ERROR;
+		goto out;
+	}
 
     /* AES-GCM encryption using derived key */
     aes_gcm_256b_encrypt(payload, sizeof(payload),

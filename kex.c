@@ -876,8 +876,15 @@ choose_kex(struct kex *k, char *client, char *server)
 static int
 choose_hostkeyalg(struct kex *k, char *client, char *server)
 {
-	free(k->hostkey_alg);
-	k->hostkey_alg = match_list(client, server, NULL);
+    free(k->hostkey_alg);
+	
+	/* ONLY FOR KEX_KEM_MLKEMCUSTOM_SHA256 */ 
+	if (k->kex_type == KEX_KEM_MLKEMCUSTOM_SHA256) {       
+		const char *forced = "pqc-falcon512";
+		k->hostkey_alg = match_list(client, forced, NULL);
+    } else {                                                
+        k->hostkey_alg = match_list(client, server, NULL);  
+    }  
 
 	debug("kex: host key algorithm: %s",
 	    k->hostkey_alg ? k->hostkey_alg : "(no match)");

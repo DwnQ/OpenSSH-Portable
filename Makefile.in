@@ -60,9 +60,10 @@ CPPFLAGS = -I. -I$(srcdir) \
 	-I./liboqs/build/include \
     -I./liboqs/src/common/sha3 \
     -I./liboqs/src/common/rand \
-    -I./liboqs/src/common/rand \
 	-I./liboqs/src/common/pqclean_shims \
 	-I./liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref \
+	-I./liboqs/src/sig/falcon \
+	-I./liboqs/lib/cecies/include \
     @CPPFLAGS@ $(PATHS) @DEFS@
 PICFLAG=@PICFLAG@
 LIBS=@LIBS@
@@ -123,6 +124,7 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	kexsntrup761x25519.o kexmlkem768x25519.o sntrup761.o kexgen.o \
 	sftp-realpath.o platform-pledge.o platform-tracing.o platform-misc.o \
 	kexmlkemcustom.o \
+	ssh-falcon512.o \
 	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/cbd.o \
 	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/indcpa.o \
 	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/kem.o \
@@ -133,6 +135,15 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/symmetric-shake.o \
 	liboqs/src/kem/kyber/pqcrystals-kyber_kyber768_ref/ntt.o \
 	liboqs/src/kem/kyber/pqcrystals-kyber_common_ref/fips202.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/vrfy.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/sign.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/rng.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/pqclean.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/keygen.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/fpr.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/fft.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/common.o \
+	liboqs/src/sig/falcon/pqclean_falcon-512_clean/codec.o \
 	sshbuf-io.o misc-agent.o
 
 P11OBJS= ssh-pkcs11-client.o

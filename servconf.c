@@ -314,6 +314,8 @@ fill_default_server_options(ServerOptions *options)
 #endif
 		servconf_add_hostkey("[default]", 0, options,
 		    _PATH_HOST_ED25519_KEY_FILE, 0);
+		servconf_add_hostkey("[default]", 0, options,
+			_PATH_HOST_FALCON512_KEY_FILE, 0);
 	}
 	/* No certificates by default */
 	if (options->num_ports == 0)

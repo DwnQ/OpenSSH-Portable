@@ -42,6 +42,7 @@
 									  "diffie-hellman-group14-sha256"
 
 #define KEX_DEFAULT_PK_ALG                         \
+	"pqc-falcon512,"                               \
 	"ssh-ed25519-cert-v01@openssh.com,"            \
 	"ecdsa-sha2-nistp256-cert-v01@openssh.com,"    \
 	"ecdsa-sha2-nistp384-cert-v01@openssh.com,"    \

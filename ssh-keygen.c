@@ -181,6 +181,9 @@ type_bits_valid(int type, const char *name, u_int32_t *bitsp)
 		int nid;
 
 		switch(type) {
+		case KEY_FALCON512:
+			*bitsp = 512;   /* Falcon512 */
+			break;
 		case KEY_ECDSA:
 			if (name != NULL &&
 			    (nid = sshkey_ecdsa_nid_from_name(name)) > 0)
@@ -1020,6 +1023,7 @@ do_gen_all_hostkeys(struct passwd *pw)
 #endif /* OPENSSL_HAS_ECC */
 #endif /* WITH_OPENSSL */
 		{ "ed25519", "ED25519",_PATH_HOST_ED25519_KEY_FILE },
+		{ "falcon512", "FALCON512",_PATH_HOST_FALCON512_KEY_FILE },
 		{ NULL, NULL, NULL }
 	};
 
@@ -3719,6 +3723,9 @@ main(int argc, char **argv)
 			    print_generic, opts, nopts);
 			n += do_print_resource_record(pw,
 			    _PATH_HOST_ED25519_KEY_FILE, rr_hostname,
+			    print_generic, opts, nopts);
+			n += do_print_resource_record(pw,
+			    _PATH_HOST_FALCON512_KEY_FILE, rr_hostname,
 			    print_generic, opts, nopts);
 			if (n == 0)
 				fatal("no keys found.");
