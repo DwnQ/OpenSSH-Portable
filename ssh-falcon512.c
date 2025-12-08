@@ -27,11 +27,11 @@ log_benchmark(const char *stage)
     char ts[64];
     strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
 
-    debug3("falcon: [%s.%03ld] %s",
-        ts, (long)(tv.tv_usec / 1000),
-        stage);
+    debug3("falcon: [%s.%06ld] %s",
+        ts,
+        (long)tv.tv_usec,
+        stage ? stage : "");
 }
-
 static int
 falcon512_alloc(struct sshkey *k)
 {
@@ -61,8 +61,6 @@ falcon512_cleanup(struct sshkey *k)
     }
 }
 
-/* ---------- generate keypair ---------- */
-
 static int
 falcon512_generate(struct sshkey *k, int unused_bits)
 {
@@ -88,7 +86,6 @@ falcon512_generate(struct sshkey *k, int unused_bits)
     return 0;
 }
 
-/* ---------- serialize public ---------- */
 
 static int
 falcon512_serialize_public(const struct sshkey *k, struct sshbuf *b,
@@ -108,7 +105,6 @@ falcon512_serialize_public(const struct sshkey *k, struct sshbuf *b,
     return 0;
 }
 
-/* ---------- deserialize public ---------- */
 
 static int
 falcon512_deserialize_public(const char *typename, struct sshbuf *b,
@@ -141,7 +137,6 @@ falcon512_deserialize_public(const char *typename, struct sshbuf *b,
     return 0;
 }
 
-/* ---------- serialize private ---------- */
 
 static int
 falcon512_serialize_private(const struct sshkey *k, struct sshbuf *b,
@@ -166,7 +161,6 @@ falcon512_serialize_private(const struct sshkey *k, struct sshbuf *b,
     return 0;
 }
 
-/* ---------- deserialize private ---------- */
 
 static int
 falcon512_deserialize_private(const char *typename, struct sshbuf *b,
@@ -204,7 +198,6 @@ falcon512_deserialize_private(const char *typename, struct sshbuf *b,
     return 0;
 }
 
-/* ---------- copy public ---------- */
 
 static int
 falcon512_copy_public(const struct sshkey *from, struct sshkey *to)
@@ -222,7 +215,6 @@ falcon512_copy_public(const struct sshkey *from, struct sshkey *to)
     return 0;
 }
 
-/* ---------- equal ---------- */
 
 static int
 falcon512_equal(const struct sshkey *a, const struct sshkey *b)
@@ -237,7 +229,6 @@ falcon512_equal(const struct sshkey *a, const struct sshkey *b)
                   a->falcon512_pk_len) == 0;
 }
 
-/* ---------- sign ---------- */
 
 static int
 falcon512_sign(struct sshkey *k,
@@ -282,7 +273,6 @@ out:
     return r;
 }
 
-/* ---------- verify ---------- */
 
 static int
 falcon512_verify(const struct sshkey *k,
@@ -337,7 +327,6 @@ out:
     return r;
 }
 
-/* ---------- function table ---------- */
 
 static const struct sshkey_impl_funcs falcon512_funcs = {
     .alloc              = falcon512_alloc,
@@ -360,7 +349,7 @@ const struct sshkey_impl sshkey_falcon512_impl = {
     .shortname = "falcon512",
     .sigalg    = SSH_FALCON512,
     .type      = KEY_FALCON512,
-    .nid       = 0,
+    .nid       = 0, 
     .cert      = 0,
     .sigonly   = 0,
     .keybits   = 512,

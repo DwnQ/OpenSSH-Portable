@@ -82,8 +82,8 @@ INSTALL=@INSTALL@
 SED=@SED@
 XAUTH_PATH=@XAUTH_PATH@
 LDFLAGS=-L. -Lopenbsd-compat/ @LDFLAGS@
-LDFLAGS += -L/usr/local/lib
-LDFLAGS += -L$(srcdir)/liboqs/lib/cecies/build
+LDFLAGS += -L$(srcdir)/liboqs/build/lib
+LDFLAGS += -L$(srcdir)/liboqs/lib/cecies
 LDFLAGS_NOPIE=-L. -Lopenbsd-compat/ @LDFLAGS_NOPIE@
 EXEEXT=@EXEEXT@
 MANFMT=@MANFMT@
@@ -144,6 +144,7 @@ LIBSSH_OBJS=${LIBOPENSSH_OBJS} \
 	liboqs/src/sig/falcon/pqclean_falcon-512_clean/fft.o \
 	liboqs/src/sig/falcon/pqclean_falcon-512_clean/common.o \
 	liboqs/src/sig/falcon/pqclean_falcon-512_clean/codec.o \
+	liboqs/src/common/sha3/sha3_c.o \
 	sshbuf-io.o misc-agent.o
 
 P11OBJS= ssh-pkcs11-client.o

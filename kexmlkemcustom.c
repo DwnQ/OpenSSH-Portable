@@ -45,18 +45,20 @@
 static void
 log_benchmark(const struct kex *kex, const char *stage)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
 
-	struct tm *tm_info = localtime(&tv.tv_sec);
-	char ts[64];
-	strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
+    struct tm *tm_info = localtime(&tv.tv_sec);
+    char ts[64];
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
 
-	const char *role = (kex && kex->server) ? "SERVER" : "CLIENT";
+    const char *role = (kex && kex->server) ? "SERVER" : "CLIENT";
 
-	debug3("kyber: [%s.%03ld] %s: %s",
-	    ts, (long)(tv.tv_usec / 1000),
-	    role, stage ? stage : "");
+    debug3("kyber: [%s.%06ld] %s: %s",
+        ts,
+        (long)tv.tv_usec,  
+        role,
+        stage ? stage : "");
 }
 
 

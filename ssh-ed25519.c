@@ -33,8 +33,27 @@
 #include "ssh.h"
 
 static void
+log_benchmark(const char *stage)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    struct tm *tm_info = localtime(&tv.tv_sec);
+    char ts[64];
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
+
+    debug3("ed25519: [%s.%06ld] %s",
+        ts,
+        (long)tv.tv_usec,
+        stage ? stage : "");
+}
+
+
+static void
 ssh_ed25519_cleanup(struct sshkey *k)
 {
+    debug3("ed25519_cleanup");
+
 	freezero(k->ed25519_pk, ED25519_PK_SZ);
 	freezero(k->ed25519_sk, ED25519_SK_SZ);
 	k->ed25519_pk = NULL;
@@ -56,6 +75,7 @@ ssh_ed25519_serialize_public(const struct sshkey *key, struct sshbuf *b,
     enum sshkey_serialize_rep opts)
 {
 	int r;
+    log_benchmark("ed2551_serialize_public");
 
 	if (key->ed25519_pk == NULL)
 		return SSH_ERR_INVALID_ARGUMENT;
@@ -70,6 +90,7 @@ ssh_ed25519_serialize_private(const struct sshkey *key, struct sshbuf *b,
     enum sshkey_serialize_rep opts)
 {
 	int r;
+    log_benchmark("ed2551_serialize_private");
 
 	if ((r = sshbuf_put_string(b, key->ed25519_pk, ED25519_PK_SZ)) != 0 ||
 	    (r = sshbuf_put_string(b, key->ed25519_sk, ED25519_SK_SZ)) != 0)
@@ -81,16 +102,22 @@ ssh_ed25519_serialize_private(const struct sshkey *key, struct sshbuf *b,
 static int
 ssh_ed25519_generate(struct sshkey *k, int bits)
 {
+    log_benchmark("ed25519_generate:start");
+
 	if ((k->ed25519_pk = malloc(ED25519_PK_SZ)) == NULL ||
 	    (k->ed25519_sk = malloc(ED25519_SK_SZ)) == NULL)
 		return SSH_ERR_ALLOC_FAIL;
 	crypto_sign_ed25519_keypair(k->ed25519_pk, k->ed25519_sk);
+    log_benchmark("ed25519_generate:end");
+
 	return 0;
 }
 
 static int
 ssh_ed25519_copy_public(const struct sshkey *from, struct sshkey *to)
 {
+    debug3("ed25519_copy_public");
+
 	if (from->ed25519_pk == NULL)
 		return 0; /* XXX SSH_ERR_INTERNAL_ERROR ? */
 	if ((to->ed25519_pk = malloc(ED25519_PK_SZ)) == NULL)
@@ -106,6 +133,7 @@ ssh_ed25519_deserialize_public(const char *ktype, struct sshbuf *b,
 	u_char *pk = NULL;
 	size_t len = 0;
 	int r;
+	log_benchmark("ed25519_deserialize_pub");
 
 	if ((r = sshbuf_get_string(b, &pk, &len)) != 0)
 		return r;
@@ -124,6 +152,7 @@ ssh_ed25519_deserialize_private(const char *ktype, struct sshbuf *b,
 	int r;
 	size_t sklen = 0;
 	u_char *ed25519_sk = NULL;
+	log_benchmark("ed25519_deserialize_private");
 
 	if ((r = ssh_ed25519_deserialize_public(NULL, b, key)) != 0)
 		goto out;
@@ -139,6 +168,7 @@ ssh_ed25519_deserialize_private(const char *ktype, struct sshbuf *b,
 	r = 0;
  out:
 	freezero(ed25519_sk, sklen);
+
 	return r;
 }
 
@@ -152,6 +182,7 @@ ssh_ed25519_sign(struct sshkey *key,
 	size_t slen = 0;
 	unsigned long long smlen;
 	int r, ret;
+	log_benchmark("ed25519_sign:start");
 
 	if (lenp != NULL)
 		*lenp = 0;
@@ -179,6 +210,7 @@ ssh_ed25519_sign(struct sshkey *key,
 	/* success */
 	r = 0;
  out:
+	log_benchmark("ed25519_sign:end");
 	freezero(sig, slen);
 	return r;
 }
@@ -237,6 +269,7 @@ ssh_ed25519_verify(const struct sshkey *key,
 	size_t len;
 	unsigned long long smlen = 0, mlen = 0;
 	int r, ret;
+	log_benchmark("ed25519_verify:start");
 
 	if (key == NULL ||
 	    sshkey_type_plain(key->type) != KEY_ED25519 ||
@@ -292,6 +325,7 @@ ssh_ed25519_verify(const struct sshkey *key,
 		freezero(m, smlen); /* NB mlen may be invalid if r != 0 */
 	sshbuf_free(b);
 	free(ktype);
+	log_benchmark("ed25519_verify:end");
 	return r;
 }
 

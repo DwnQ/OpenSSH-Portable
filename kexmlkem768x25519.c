@@ -49,6 +49,26 @@
 
 #include "libcrux_mlkem768_sha3.h"
 
+static void
+log_benchmark(const struct kex *kex, const char *stage)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    struct tm *tm_info = localtime(&tv.tv_sec);
+    char ts[64];
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", tm_info);
+
+    const char *role = (kex && kex->server) ? "SERVER" : "CLIENT";
+
+    debug3("mlkem: [%s.%06ld] %s: %s",
+        ts,
+        (long)tv.tv_usec,  
+        role,
+        stage ? stage : "");
+}
+
+
 int kex_kem_mlkem768x25519_keypair(struct kex *kex)
 {
 	struct sshbuf *buf = NULL;
@@ -56,6 +76,8 @@ int kex_kem_mlkem768x25519_keypair(struct kex *kex)
 	size_t need;
 	int r = SSH_ERR_INTERNAL_ERROR;
 	struct libcrux_mlkem768_keypair keypair;
+
+	log_benchmark(kex, "keypair start");
 
 	if ((buf = sshbuf_new()) == NULL)
 		return SSH_ERR_ALLOC_FAIL;
@@ -81,6 +103,7 @@ int kex_kem_mlkem768x25519_keypair(struct kex *kex)
 	kex->client_pub = buf;
 	buf = NULL;
 out:
+	log_benchmark(kex, "keypair end");
 	explicit_bzero(&keypair, sizeof(keypair));
 	explicit_bzero(rnd, sizeof(rnd));
 	sshbuf_free(buf);
@@ -102,6 +125,8 @@ int kex_kem_mlkem768x25519_enc(struct kex *kex,
 	struct libcrux_mlkem768_enc_result enc;
 	struct libcrux_mlkem768_pk mlkem_pub;
 
+	log_benchmark(kex, "encapsulation start");
+	
 	*server_blobp = NULL;
 	*shared_secretp = NULL;
 	memset(&mlkem_pub, 0, sizeof(mlkem_pub));
@@ -180,6 +205,7 @@ int kex_kem_mlkem768x25519_enc(struct kex *kex,
 	server_blob = NULL;
 	buf = NULL;
 out:
+    log_benchmark(kex, "encapsulation end");
 	explicit_bzero(hash, sizeof(hash));
 	explicit_bzero(server_key, sizeof(server_key));
 	explicit_bzero(rnd, sizeof(rnd));
@@ -200,6 +226,8 @@ int kex_kem_mlkem768x25519_dec(struct kex *kex,
 	int r;
 	struct libcrux_mlkem768_sk mlkem_priv;
 	struct libcrux_mlkem768_ciphertext mlkem_ciphertext;
+
+	log_benchmark(kex, "decapsulation start");
 
 	*shared_secretp = NULL;
 	memset(&mlkem_priv, 0, sizeof(mlkem_priv));
@@ -255,6 +283,7 @@ int kex_kem_mlkem768x25519_dec(struct kex *kex,
 	*shared_secretp = buf;
 	buf = NULL;
 out:
+    log_benchmark(kex, "decapsulation end");
 	explicit_bzero(hash, sizeof(hash));
 	explicit_bzero(&mlkem_priv, sizeof(mlkem_priv));
 	explicit_bzero(&mlkem_ciphertext, sizeof(mlkem_ciphertext));
