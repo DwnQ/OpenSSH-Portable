@@ -5,10 +5,10 @@ HOST="127.0.0.1"
 PORT=2222
 USER="dwq"
 
-mkdir -p benchmark2
+mkdir -p benchmark_original
 
 for i in $(seq -f "%04g" 1 1000); do
-    LOGFILE="benchmark2/conn_$i.log"
+    LOGFILE="benchmark_original/conn_$i.log"
 
     $CLIENT \
         -p $PORT \

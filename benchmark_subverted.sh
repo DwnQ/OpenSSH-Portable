@@ -5,10 +5,10 @@ HOST="127.0.0.1"
 PORT=2222
 USER="dwq"
 
-mkdir -p benchmark
+mkdir -p benchmark_subverted
 
 for i in $(seq -f "%04g" 1 1000); do
-    LOGFILE="benchmark/conn_$i.log"
+    LOGFILE="benchmark_subverted/conn_$i.log"
 
     $CLIENT \
         -p $PORT \

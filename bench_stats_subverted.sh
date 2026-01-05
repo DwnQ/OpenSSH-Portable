@@ -1,6 +1,6 @@
 #!/bin/bash
 
-logs=$(ls benchmark/conn_*_processed.log 2>/dev/null)
+logs=$(ls benchmark_subverted/conn_*_processed.log 2>/dev/null)
 [ -z "$logs" ] && echo "No logs found." && exit 1
 
 falcon_times=()
