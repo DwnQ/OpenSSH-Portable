@@ -1,5 +1,5 @@
 
-for f in benchmark2/conn_*.log; do
+for f in benchmark_original/conn_*.log; do
     out="${f%.log}_processed.log"
-    grep -E "debug3: ed25519:|debug3: falcon:" "$f" > "$out"
+    grep -E "debug3: mlkem:|debug3: ed25519:" "$f" > "$out"
 done
