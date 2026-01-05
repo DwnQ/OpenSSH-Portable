@@ -1,0 +1,8 @@
+ignore:
+  - "lib"
+  - "tests"
+  - ".idea"
+  - ".github"
+  - "examples"
+  - "programs"
+  - "docs"
