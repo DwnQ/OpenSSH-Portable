@@ -1,0 +1,32 @@
+# Ignore git metadata everywhere
+**/.git
+**/.gitignore
+**/.gitmodules
+
+# Ignore all build directories anywhere
+**/build/
+**/build-*/
+build/
+
+# Ignore specific build artifacts
+liboqs/build/
+
+# Ignore object files and libraries anywhere
+**/*.o
+**/*.so
+**/*.so.*
+**/*.a
+**/*.lib
+**/*.dll
+
+# Ignore logs
+**/*.log
+**/*.out
+
+# Ignore IDE files
+**/.vscode/
+**/.idea/
+
+# Ignore the docker artifacts themselves (except entrypoint.sh which is needed in the build)
+docker-compose.yml
+Dockerfile

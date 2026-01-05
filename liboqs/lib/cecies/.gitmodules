@@ -1,0 +1,12 @@
+[submodule "lib/mbedtls"]
+	path = lib/mbedtls
+	url = https://github.com/ARMmbed/mbedtls
+[submodule "lib/libsodium"]
+	path = lib/libsodium
+	url = https://github.com/GlitchedPolygons/libsodium
+[submodule "lib/acutest"]
+	path = lib/acutest
+	url = https://github.com/mity/acutest.git
+[submodule "lib/ccrush"]
+	path = lib/ccrush
+	url = https://github.com/GlitchedPolygons/ccrush

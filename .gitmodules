@@ -1,3 +1,0 @@
-[submodule "lib/cecies"]
-	path = lib/cecies
-	url = https://github.com/GlitchedPolygons/cecies.git

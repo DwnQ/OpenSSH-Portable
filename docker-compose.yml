@@ -1,0 +1,18 @@
+services:
+  openssh-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: custom-openssh
+    container_name: custom_openssh_container
+    ports:
+      - "2222:2222"
+    volumes:
+      # Optional: Mount current dir to inspect build artifacts if needed, 
+      # but we copied everything in.
+      # - .:/src 
+      - ssh_data:/home/dwq
+    tty: true
+
+volumes:
+  ssh_data:
