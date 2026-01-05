@@ -43,3 +43,9 @@ configure
 aclocal.m4
 ChangeLog
 **/*.0
+
+benchmark_original/*
+benchmark_subverted/*
+
+benchmark/*
+benchmark1/*
