@@ -10,6 +10,7 @@ build/
 
 # Ignore specific build artifacts
 liboqs/build/
+liboqs/lib/cecies/build/
 
 # Ignore object files and libraries anywhere
 **/*.o

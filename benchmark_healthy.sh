@@ -1,9 +1,9 @@
 #!/bin/bash
 
-CLIENT="$HOME/customsshClient/bin/ssh"
+CLIENT="/opt/customsshClient/bin/ssh"
 HOST="127.0.0.1"
 PORT=2222
-USER="dwq"
+USER="root"
 
 mkdir -p benchmark_original
 

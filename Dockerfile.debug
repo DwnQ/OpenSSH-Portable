@@ -1,0 +1,92 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# ---- deps ----
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    ninja-build \
+    libssl-dev \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    zlib1g-dev \
+    uuid-dev \
+    libpam0g-dev \
+    git \
+    python3 \
+    unzip \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- env ----
+ENV LD_LIBRARY_PATH=/usr/local/lib
+ENV LIBRARY_PATH=/usr/local/lib
+ENV C_INCLUDE_PATH=/usr/local/include
+
+# ---- sources ----
+WORKDIR /src
+COPY . .
+
+# Make sure no host build artifacts break container builds
+RUN find /src -name CMakeCache.txt -delete && \
+    find /src -name CMakeFiles -type d -prune -exec rm -rf {} + && \
+    find /src -name build -type d -prune -exec rm -rf {} + && \
+    find /src -name "*.a" -delete && \
+    find /src -name "*.so" -delete && \
+    find /src -name "*.so.*" -delete && \
+    find /src -name "*.la" -delete || true
+
+# ============================================================
+# Build + install CECIES (exports symbols, installs to /usr/local)
+# ============================================================
+WORKDIR /src/liboqs/lib/cecies
+RUN rm -rf build CMakeCache.txt CMakeFiles && \
+    mkdir build && cd build && \
+    cmake \
+      -DBUILD_SHARED_LIBS=ON \
+      -Dcecies_BUILD_DLL=ON \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      .. && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    nm -D /usr/local/lib/libcecies.so | grep cecies_curve25519_encrypt && \
+    nm -D /usr/local/lib/libcecies.so | grep cecies_free
+
+# ============================================================
+# Build + install liboqs (shared, installs to /usr/local)
+# ============================================================
+WORKDIR /src/liboqs
+RUN rm -rf build CMakeCache.txt CMakeFiles && \
+    mkdir build && cd build && \
+    cmake -GNinja \
+      -DOQS_BUILD_ONLY_LIB=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DOQS_USE_AVX2_INSTRUCTIONS=OFF \
+      -DOQS_ENABLE_TESTS=OFF \
+      -DOQS_ENABLE_KAT_TESTS=OFF \
+      -DOQS_ENABLE_BENCHMARKS=OFF \
+      -DOQS_ENABLE_EXAMPLES=OFF \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      .. && \
+    ninja && \
+    ninja install && \
+    ldconfig && \
+    ls -l /usr/local/lib/liboqs.so*
+
+# ============================================================
+# Setup source directories for manual debugging
+# ============================================================
+RUN cp -r /src /src-client
+RUN cp -r /src /src-server
+
+WORKDIR /src-client
+
+# Pre-clean like the main Dockerfile does
+RUN rm -rf config.h config.log config.status .depend
+
+CMD ["/bin/bash"]

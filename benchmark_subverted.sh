@@ -1,9 +1,9 @@
 #!/bin/bash
 
-CLIENT="$HOME/customsshClient/bin/ssh"
+CLIENT="/opt/customsshClient/bin/ssh"
 HOST="127.0.0.1"
 PORT=2222
-USER="dwq"
+USER="root"
 
 mkdir -p benchmark_subverted
 
@@ -14,6 +14,8 @@ for i in $(seq -f "%04g" 1 1000); do
         -p $PORT \
         -vvv \
         -oBatchMode=yes \
+        -oStrictHostKeyChecking=no \
+        -oUserKnownHostsFile=/dev/null \
         -oKexAlgorithms=mlkemcustom-sha256 \
         -oHostKeyAlgorithms=pqc-falcon512 \
         -oPubkeyAcceptedAlgorithms=pqc-falcon512 \

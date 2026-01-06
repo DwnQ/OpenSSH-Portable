@@ -1,64 +1,129 @@
 #!/bin/bash
 
-logs=$(ls benchmark_original/conn_*_processed.log 2>/dev/null)
-[ -z "$logs" ] && echo "No logs found." && exit 1
+# --- Configuration ---
+DIR_ORIG="benchmark_original"
+DIR_SUB="benchmark_subverted"
+OUT_FILE="benchmark_full.out"
 
-falcon_times=()
+# Initialize arrays
+mlkem_times=()
+ed25519_times=()
 kyber_times=()
+falcon_times=()
 
-extract_us() {
+# --- Extraction Function ---
+extract_span() {
     log="$1"
-    tag="$2"
+    start_pat="$2"
+    end_pat="$3"
 
-    ts_list=$(grep "debug3: $tag:" "$log" | grep -oP '\[\K[0-9\-: .]+')
-    [ -z "$ts_list" ] && echo "" && return
+    # HEAD -n1 gets the VERY FIRST occurrence (Start of the sequence)
+    ts_start=$(grep -E "$start_pat" "$log" | grep -oP '\[\K[0-9\-: .]+' | head -n1)
+    
+    # TAIL -n1 gets the VERY LAST occurrence (End of the sequence)
+    ts_end=$(grep -E "$end_pat" "$log" | grep -oP '\[\K[0-9\-: .]+' | tail -n1)
 
-    first=$(printf "%s\n" "$ts_list" | head -n1)
-    last=$(printf "%s\n" "$ts_list" | tail -n1)
+    if [ -z "$ts_start" ] || [ -z "$ts_end" ]; then
+        return
+    fi
 
-    first_ns=$(date -d "$first" +%s%N)
-    last_ns=$(date -d "$last" +%s%N)
+    start_ns=$(date -d "$ts_start" +%s%N)
+    end_ns=$(date -d "$ts_end" +%s%N)
+    
+    # Sanity check: If end is before start, we ignore this sample
+    if [ "$end_ns" -lt "$start_ns" ]; then
+        return
+    fi
 
-    dur_us=$(( (last_ns - first_ns) / 1000 ))
+    # Calculate microseconds
+    dur_us=$(( (end_ns - start_ns) / 1000 ))
     echo "$dur_us"
 }
 
-for f in $logs; do
-    f_us=$(extract_us "$f" "falcon")
-    k_us=$(extract_us "$f" "kyber")
+# --- Main Execution ---
 
-    [ -n "$f_us" ] && falcon_times+=("$f_us")
-    [ -n "$k_us" ] && kyber_times+=("$k_us")
-done
+# 1. Process Original Folder
+echo "Processing $DIR_ORIG..."
+logs_orig=$(ls $DIR_ORIG/conn_*_processed.log 2>/dev/null)
 
+if [ -n "$logs_orig" ]; then
+    for f in $logs_orig; do
+        # MLKEM: Full Span (Keypair Start -> Decapsulation End)
+        val=$(extract_span "$f" "mlkem:.*keypair start" "mlkem:.*decapsulation end")
+        [ -n "$val" ] && mlkem_times+=("$val")
+
+        # Ed25519: Full Span (First Deserialize -> Sign End)
+        val=$(extract_span "$f" "ed25519:.*deserialize_pub" "ed25519:.*sign:end")
+        [ -n "$val" ] && ed25519_times+=("$val")
+    done
+fi
+
+# 2. Process Subverted Folder
+echo "Processing $DIR_SUB..."
+logs_sub=$(ls $DIR_SUB/conn_*_processed.log 2>/dev/null)
+
+if [ -n "$logs_sub" ]; then
+    for f in $logs_sub; do
+        # Kyber: Full Span (Keypair Start -> Decapsulation End)
+        val=$(extract_span "$f" "kyber:.*keypair start" "kyber:.*decapsulation end")
+        [ -n "$val" ] && kyber_times+=("$val")
+
+        # Falcon: Full Span (First op -> Sign End)
+        # Assuming Falcon logs start with deserialize/verify just like Ed25519
+        val=$(extract_span "$f" "falcon:" "falcon:.*sign:en[gd]")
+        [ -n "$val" ] && falcon_times+=("$val")
+    done
+fi
+
+# --- Statistics Function (Style Preserved) ---
 calc_stats() {
     arr=("$@")
     count=${#arr[@]}
 
-    [ "$count" -eq 0 ] && echo "No samples." && return
+    if [ "$count" -eq 0 ]; then
+        echo "No samples."
+        return
+    fi
 
     sorted=($(printf "%s\n" "${arr[@]}" | sort -n))
     min=${sorted[0]}
     max=${sorted[$((count-1))]}
-    avg=$(printf "%s\n" "${sorted[@]}" | awk '{sum+=$1} END {print sum/NR}')
+    avg=$(printf "%s\n" "${sorted[@]}" | awk '{sum+=$1} END {print int(sum/NR)}')
 
     q1=${sorted[$((count/4))]}
     median=${sorted[$((count/2))]}
     q3=${sorted[$((3*count/4))]}
-    p99=${sorted[$((count*99/100))]}
 
-    echo "Samples: $count"
-    echo "Minimum (µs):       $min"
-    echo "Q1 (µs):            $q1"
-    echo "Median (µs):        $median"
-    echo "Q3 (µs):            $q3"
-    echo "Maximum (µs):       $max"
-    echo "Mean (µs):          $avg"
+    echo "Samples:      $count"
+    echo "Minimum (µs): $min"
+    echo "Q1 (µs):      $q1"
+    echo "Median (µs):  $median"
+    echo "Q3 (µs):      $q3"
+    echo "Maximum (µs): $max"
+    echo "Mean (µs):    $avg"
 }
 
-echo "====== KYBER ======"
-calc_stats "${kyber_times[@]}"
+# --- Write Output to File ---
+{
+    echo "Benchmark Results Generated on $(date)"
+    echo "------------------------------------------------"
+    
+    echo
+    echo "====== ORIGINAL: MLKEM (Full Span) ======"
+    calc_stats "${mlkem_times[@]}"
 
-echo
-echo "====== FALCON ======"
-calc_stats "${falcon_times[@]}"
+    echo
+    echo "====== ORIGINAL: Ed25519 (Full Span) ======"
+    calc_stats "${ed25519_times[@]}"
+
+    echo
+    echo "====== SUBVERTED: Kyber (Full Span) ======"
+    calc_stats "${kyber_times[@]}"
+
+    echo
+    echo "====== SUBVERTED: Falcon (Full Span) ======"
+    calc_stats "${falcon_times[@]}"
+
+} > "$OUT_FILE"
+
+echo "Done! Results saved to $OUT_FILE"
