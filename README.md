@@ -8,6 +8,74 @@ OpenSSH is a complete implementation of the SSH protocol (version 2) for secure 
 
 This is a port of OpenBSD's [OpenSSH](https://openssh.com) to most Unix-like operating systems, including Linux, OS X and Cygwin. Portable OpenSSH polyfills OpenBSD APIs that are not available elsewhere, adds sshd sandboxing for more operating systems and includes support for OS-native authentication and auditing (e.g. using PAM).
 
+## Quick Start with Docker
+
+Build and run the PQC-enabled OpenSSH environment using Docker:
+
+```bash
+# Build and start container
+docker compose up -d --build
+
+# Enter the container
+docker exec -it custom_openssh_container bash
+
+# Run full setup + benchmarks
+cd /src
+chmod +x run_all_benchmarks.sh
+./run_all_benchmarks.sh
+
+# Plot results
+python3 bench_plot.py
+```
+
+Retrieve results from container
+```bash
+
+# Retrieve comparison plot
+docker cp custom_openssh_container:/src/benchmark_comparison.png .
+
+# Retrieve results
+docker cp custom_openssh_container:/src/benchmark_full.out .
+```
+
+## Running Benchmarks
+
+The benchmark suite compares standard SSH algorithms KEXMLKEM768x25519 vs a subverted version of Kyber and Falcon.
+
+### Manual Setup (inside container)
+
+```bash
+# Start SSH server
+pkill sshd
+/opt/customsshServer/sbin/sshd
+
+# Generate keys
+/opt/customsshClient/bin/ssh-keygen -t falcon512 -f ~/.ssh/id_falcon512 -N ""
+/opt/customsshClient/bin/ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+
+# Setup authorized_keys
+cat ~/.ssh/id_falcon512.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
+chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys
+
+# Run benchmarks
+cd /src
+./benchmark_healthy.sh      # Standard algorithms
+./benchmark_subverted.sh    # SubvertedPQC algorithms
+
+# Process results
+./bench_process.sh && ./bench_process_subverted.sh
+./bench_stats.sh && ./bench_stats_subverted.sh
+```
+
+### Benchmark Scripts
+
+| Script | KEX Algorithm | Host/Pubkey Algorithm |
+|--------|---------------|----------------------|
+| `benchmark_healthy.sh` | mlkem768x25519-sha256 | ssh-ed25519 |
+| `benchmark_subverted.sh` | mlkemcustom-sha256 (Kyber) | pqc-falcon512 |
+| `run_all_benchmarks.sh` | Both (complete setup + benchmarks) |
+
 ## Documentation
 
 The official documentation for OpenSSH are the man pages for each tool:
