@@ -1,4 +1,0 @@
-[2025-11-10 00:54:14.292] CLIENT: keypair start
-[2025-11-10 00:54:14.292] CLIENT: keypair end
-[2025-11-10 00:54:14.294] CLIENT: decapsulation start
-[2025-11-10 00:54:14.295] CLIENT: decapsulation end
